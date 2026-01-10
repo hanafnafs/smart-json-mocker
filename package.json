@@ -1,0 +1,79 @@
+{
+  "name": "smart-json-mocker",
+  "version": "1.0.0",
+  "description": "AI-powered JSON mock data generator that intelligently fills null/empty values based on key names and types. Free to use with Google Gemini AI.",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts",
+    "prepublishOnly": "npm run build",
+    "demo:dev": "cd demo && npm run dev",
+    "demo:build": "cd demo && npm run build"
+  },
+  "keywords": [
+    "mock",
+    "json",
+    "faker",
+    "ai",
+    "gemini",
+    "mock-data",
+    "api-mock",
+    "testing",
+    "development",
+    "typescript",
+    "null-values",
+    "dummy-data",
+    "smart-mock",
+    "auto-mock"
+  ],
+  "author": "Muhammad",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/smart-json-mocker.git"
+  },
+  "homepage": "https://github.com/your-username/smart-json-mocker#readme",
+  "bugs": {
+    "url": "https://github.com/your-username/smart-json-mocker/issues"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0",
+    "eslint": "^8.55.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0"
+  },
+  "peerDependencies": {
+    "axios": ">=0.21.0"
+  },
+  "peerDependenciesMeta": {
+    "axios": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

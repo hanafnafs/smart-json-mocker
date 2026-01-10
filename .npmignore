@@ -1,0 +1,27 @@
+# Source files (we publish dist/)
+src/
+
+# Demo
+demo/
+
+# Config files
+tsconfig.json
+.eslintrc*
+.prettierrc*
+vitest.config.*
+
+# Development files
+.gitignore
+.github/
+*.test.ts
+*.spec.ts
+__tests__/
+
+# IDE
+.idea/
+.vscode/
+
+# Misc
+*.log
+coverage/
+.cache/
