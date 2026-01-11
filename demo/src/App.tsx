@@ -584,6 +584,8 @@ export default function App() {
             <div className="bg-gray-950 rounded-lg p-4">
               <code className="text-green-400">npm install smart-json-mocker</code>
             </div>
+            
+            <div className="text-sm font-medium text-gray-300 mb-2">1. Fill Empty Values</div>
             <div className="bg-gray-950 rounded-lg p-4 code-editor text-sm overflow-auto">
               <pre className="text-gray-300">{`import { quickSetup, fill } from 'smart-json-mocker';
 
@@ -596,6 +598,34 @@ const filledData = await fill(apiResponse);
 
 console.log(filledData);
 // { firstName: 'John', email: 'john@example.com', phone: '+1-555-123-4567' }`}</pre>
+            </div>
+
+            <div className="text-sm font-medium text-gray-300 mb-2 mt-6">2. Generate from TypeScript Interfaces</div>
+            <div className="bg-gray-950 rounded-lg p-4 code-editor text-sm overflow-auto">
+              <pre className="text-gray-300">{`import { generateFromInterface, generateManyFromInterface } from 'smart-json-mocker';
+
+// Define your interface
+const userInterface = \`interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  age: number;
+  isActive: boolean;
+}\`;
+
+// Generate single user with context
+const user = await generateFromInterface(
+  userInterface,
+  'Generate realistic user for a social media platform'
+);
+
+// Generate multiple users
+const users = await generateManyFromInterface(
+  userInterface,
+  5,
+  'Diverse international users for testing'
+);`}</pre>
             </div>
           </div>
         </section>

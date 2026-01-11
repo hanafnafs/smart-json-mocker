@@ -10,6 +10,7 @@
 
 - 🤖 **AI-Powered**: Uses Google Gemini (free tier) to generate contextually appropriate mock data
 - 🎯 **Smart Key Detection**: Automatically infers data type from key names (email, phone, name, etc.)
+- 🧬 **TypeScript Interface Generation**: Generate JSON directly from TypeScript interfaces with contextual understanding
 - 🔌 **Zero Config**: Works out of the box with 200+ built-in patterns
 - 🆓 **100% Free**: Uses Gemini's generous free tier (1500 requests/day)
 - 📦 **Lightweight**: Only ~50KB, no heavy dependencies
@@ -149,7 +150,7 @@ const filled = await fill(objectWithNulls, {
 ### Generate Mock Data
 
 ```typescript
-import { generate, generateMany } from 'smart-json-mocker';
+import { generate, generateMany, generateFromInterface, generateManyFromInterface } from 'smart-json-mocker';
 
 // Generate from TypeScript interface
 const user = await generate<User>(`
@@ -179,6 +180,67 @@ const products = await generateMany(productSchema, 10);
 const saudiProducts = await generateMany(productSchema, 5, {
   context: 'Saudi Arabian marketplace products with prices in SAR',
 });
+```
+
+### Generate from TypeScript Interfaces (Enhanced)
+
+For more focused interface-based generation with better context handling:
+
+```typescript
+import { generateFromInterface, generateManyFromInterface } from 'smart-json-mocker';
+
+// Define your TypeScript interface
+const userInterface = `
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  age: number;
+  isActive: boolean;
+  address: {
+    street: string;
+    city: string;
+    country: string;
+    zipCode: string;
+  };
+  preferences: {
+    theme: 'light' | 'dark';
+    notifications: boolean;
+  };
+}`;
+
+// Generate single user with context
+const user = await generateFromInterface<User>(
+  userInterface,
+  'Generate realistic user data for a social media platform'
+);
+
+// Generate multiple users with context
+const users = await generateManyFromInterface<User>(
+  userInterface,
+  5,
+  'Generate diverse international users for testing an e-commerce platform'
+);
+
+// Context helps AI understand what type of data to generate
+const employees = await generateManyFromInterface<Employee>(
+  employeeInterface,
+  10,
+  'Corporate employees at a tech company with realistic job titles and departments'
+);
+
+// With additional options
+const testUsers = await generateFromInterface<User>(
+  userInterface,
+  'Test users for QA environment',
+  {
+    overrides: {
+      isActive: true, // Force all users to be active
+      'address.country': 'Saudi Arabia', // Force specific country
+    }
+  }
+);
 ```
 
 ### Custom Overrides
@@ -329,6 +391,13 @@ const demoUsers = await generateMany(UserSchema, 100);
 const demoProducts = await generateMany(ProductSchema, 50, {
   context: 'Electronics store products',
 });
+
+// Enhanced interface-based generation for demos
+const demoProfiles = await generateManyFromInterface(
+  userProfileInterface,
+  50,
+  'Diverse user profiles for a social media app demo with realistic bio and preferences'
+);
 ```
 
 ### 3. Testing & Development
@@ -337,6 +406,18 @@ const demoProducts = await generateMany(ProductSchema, 50, {
 // Create test fixtures
 const testUser = await generate<User>(UserInterface);
 const testOrders = await generateMany<Order>(OrderInterface, 10);
+
+// Enhanced interface-based test data
+const testCustomers = await generateManyFromInterface(
+  customerInterface,
+  20,
+  'Test customers with various demographics and purchase histories for QA testing'
+);
+
+const testProducts = await generateFromInterface(
+  productInterface,
+  'High-end electronics product for edge case testing'
+);
 ```
 
 ### 4. React/Angular/Vue Development

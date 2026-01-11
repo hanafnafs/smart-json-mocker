@@ -144,6 +144,70 @@ export class SmartMocker {
   }
 
   /**
+   * Generate JSON from TypeScript interface definition with contextual understanding
+   */
+  async generateFromInterface<T = unknown>(
+    interfaceDefinition: string,
+    context?: string,
+    options: GenerateOptions = {}
+  ): Promise<T> {
+    const mergedOverrides = { ...this.overrides, ...options.overrides };
+
+    if (!this.geminiProvider) {
+      throw new Error('AI provider not configured. Please provide a valid Gemini API key.');
+    }
+
+    // Enhanced context for interface-based generation
+    const enhancedContext = context 
+      ? `Context: ${context}\n\nInterface Definition:\n${interfaceDefinition}`
+      : `Interface Definition:\n${interfaceDefinition}`;
+
+    const result = await retry(
+      () => this.geminiProvider!.generateFromSchema(interfaceDefinition, 1, enhancedContext),
+      this.config.ai.maxRetries ?? 3
+    );
+
+    if (result.success && result.data) {
+      return this.applyOverrides(result.data, mergedOverrides) as T;
+    }
+
+    throw new Error('Failed to generate mock data from interface');
+  }
+
+  /**
+   * Generate multiple JSON objects from TypeScript interface definition
+   */
+  async generateManyFromInterface<T = unknown>(
+    interfaceDefinition: string,
+    count: number,
+    context?: string,
+    options: GenerateOptions = {}
+  ): Promise<T[]> {
+    const mergedOverrides = { ...this.overrides, ...options.overrides };
+
+    if (!this.geminiProvider) {
+      throw new Error('AI provider not configured. Please provide a valid Gemini API key.');
+    }
+
+    // Enhanced context for interface-based generation
+    const enhancedContext = context 
+      ? `Context: ${context}\n\nInterface Definition:\n${interfaceDefinition}`
+      : `Interface Definition:\n${interfaceDefinition}`;
+
+    const result = await retry(
+      () => this.geminiProvider!.generateFromSchema(interfaceDefinition, count, enhancedContext),
+      this.config.ai.maxRetries ?? 3
+    );
+
+    if (result.success && result.data) {
+      const data = Array.isArray(result.data) ? result.data : [result.data];
+      return data.map(item => this.applyOverrides(item, mergedOverrides)) as T[];
+    }
+
+    throw new Error('Failed to generate mock data from interface');
+  }
+
+  /**
    * Add a custom field override
    */
   addOverride(key: string, value: FieldOverrideValue): void {

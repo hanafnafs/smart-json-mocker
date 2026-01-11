@@ -124,6 +124,29 @@ export async function generateMany<T = unknown>(
   return getInstance().generateMany<T>(schema, count, options);
 }
 
+/**
+ * Generate JSON from TypeScript interface definition using the default instance
+ */
+export async function generateFromInterface<T = unknown>(
+  interfaceDefinition: string,
+  context?: string,
+  options?: GenerateOptions
+): Promise<T> {
+  return getInstance().generateFromInterface<T>(interfaceDefinition, context, options);
+}
+
+/**
+ * Generate multiple JSON objects from TypeScript interface definition using the default instance
+ */
+export async function generateManyFromInterface<T = unknown>(
+  interfaceDefinition: string,
+  count: number,
+  context?: string,
+  options?: GenerateOptions
+): Promise<T[]> {
+  return getInstance().generateManyFromInterface<T>(interfaceDefinition, count, context, options);
+}
+
 // ============================================
 // Quick Setup Helper
 // ============================================

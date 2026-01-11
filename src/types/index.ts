@@ -190,6 +190,12 @@ export interface SmartMocker {
   /** Generate array of mock data */
   generateMany<T = unknown>(schema: string | object, count: number, options?: GenerateOptions): Promise<T[]>;
   
+  /** Generate JSON from TypeScript interface definition with contextual understanding */
+  generateFromInterface<T = unknown>(interfaceDefinition: string, context?: string, options?: GenerateOptions): Promise<T>;
+  
+  /** Generate multiple JSON objects from TypeScript interface definition */
+  generateManyFromInterface<T = unknown>(interfaceDefinition: string, count: number, context?: string, options?: GenerateOptions): Promise<T[]>;
+  
   /** Add custom field overrides */
   addOverride(key: string, value: FieldOverrideValue): void;
   
