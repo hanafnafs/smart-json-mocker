@@ -10,10 +10,7 @@
 export { SmartMocker, createSmartMocker } from './core';
 
 // Provider exports
-export { GeminiProvider, LocalProvider } from './providers';
-
-// Pattern exports
-export { builtInPatterns, findPattern, generateLocal, generators } from './patterns';
+export { GeminiProvider } from './providers';
 
 // Interceptor exports
 export {
@@ -47,9 +44,6 @@ export type {
   AxiosInterceptor,
   FetchWrapper,
   
-  // Pattern types
-  PatternMatcher,
-  PatternCategory,
   
   // Internal types (for advanced usage)
   FieldInfo,
@@ -136,12 +130,15 @@ export async function generateMany<T = unknown>(
 
 /**
  * Quick setup with minimal configuration
- * @param apiKey - Google Gemini API key (optional, uses local patterns if not provided)
+ * @param apiKey - Google Gemini API key (required)
  */
-export function quickSetup(apiKey?: string): SmartMocker {
+export function quickSetup(apiKey: string): SmartMocker {
+  if (!apiKey) {
+    throw new Error('API key is required for AI-powered mock data generation');
+  }
   return init({
     ai: {
-      provider: apiKey ? 'gemini' : 'local',
+      provider: 'gemini',
       apiKey,
     },
     cache: {

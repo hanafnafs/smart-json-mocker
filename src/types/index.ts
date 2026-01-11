@@ -6,13 +6,13 @@
 // Configuration Types
 // ============================================
 
-export type AIProvider = 'gemini' | 'groq' | 'local';
+export type AIProvider = 'gemini';
 
 export interface AIConfig {
   /** AI provider to use */
   provider: AIProvider;
-  /** API key for the provider */
-  apiKey?: string;
+  /** API key for the provider (required) */
+  apiKey: string;
   /** Model to use (optional, defaults to best free option) */
   model?: string;
   /** Fallback providers if primary fails */
@@ -64,8 +64,6 @@ export interface FieldOverrideConfig {
   value?: unknown;
   /** Generator function */
   generator?: () => unknown;
-  /** Pattern to generate (e.g., 'email', 'phone', 'uuid') */
-  pattern?: string;
   /** Enum values to pick from */
   enum?: unknown[];
   /** Min value for numbers */
@@ -160,25 +158,6 @@ export interface CacheEntry {
   ttl: number;
 }
 
-// ============================================
-// Pattern Types
-// ============================================
-
-export interface PatternMatcher {
-  /** Pattern name */
-  name: string;
-  /** Match priority (higher = checked first) */
-  priority: number;
-  /** Check if key matches this pattern */
-  match: (key: string, path: string) => boolean;
-  /** Generate value for this pattern */
-  generate: () => unknown;
-}
-
-export interface PatternCategory {
-  name: string;
-  patterns: PatternMatcher[];
-}
 
 // ============================================
 // Interceptor Types

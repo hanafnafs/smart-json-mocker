@@ -152,7 +152,7 @@ async function generateWithAI(
   context?: string
 ): Promise<Record<string, unknown>> {
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
   
   const fieldDescriptions = fields.map(f => `- "${f.path}": key name is "${f.key}"`).join('\n');
   
@@ -192,7 +192,7 @@ async function generateSchemaWithAI(
   context?: string
 ): Promise<unknown> {
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
   
   const prompt = `Generate ${count} realistic mock object(s) based on this schema/interface.
 
@@ -221,48 +221,6 @@ ${count === 1 ? 'Return a single JSON object.' : `Return a JSON array with exact
 // Demo Component
 // ============================================
 
-const sampleObjects = {
-  user: {
-    id: null,
-    firstName: null,
-    lastName: null,
-    email: '',
-    phone: null,
-    avatar: null,
-    isActive: null,
-    createdAt: null,
-  },
-  product: {
-    id: null,
-    title: null,
-    description: null,
-    price: null,
-    quantity: null,
-    rating: null,
-    imageUrl: null,
-    category: null,
-  },
-  order: {
-    orderId: null,
-    customer: {
-      name: null,
-      email: null,
-      phone: null,
-    },
-    items: [],
-    totalAmount: null,
-    status: null,
-    createdAt: null,
-  },
-  address: {
-    street: null,
-    city: null,
-    country: null,
-    zipCode: null,
-    latitude: null,
-    longitude: null,
-  },
-};
 
 const sampleSchemas = {
   user: `interface User {
@@ -319,14 +277,13 @@ function JsonHighlight({ json }: { json: string }) {
 export default function App() {
   const [apiKey, setApiKey] = useState('');
   const [mode, setMode] = useState<'fill' | 'generate'>('fill');
-  const [inputJson, setInputJson] = useState(JSON.stringify(sampleObjects.user, null, 2));
+  const [inputJson, setInputJson] = useState('{\n  "id": null,\n  "firstName": null,\n  "email": "",\n  "phone": null\n}');
   const [schema, setSchema] = useState(sampleSchemas.user);
   const [count, setCount] = useState(1);
   const [context, setContext] = useState('');
   const [output, setOutput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [useAI, setUseAI] = useState(true);
 
   const handleFill = useCallback(async () => {
     setLoading(true);
@@ -344,37 +301,21 @@ export default function App() {
         return;
       }
       
-      // Separate local and AI fields
-      const localFields: FieldInfo[] = [];
-      const aiFields: FieldInfo[] = [];
-      
-      for (const field of fields) {
-        const gen = findGenerator(field.key);
-        if (gen) {
-          localFields.push(field);
-        } else {
-          aiFields.push(field);
-        }
-      }
-      
-      // Fill local fields
-      for (const field of localFields) {
-        const gen = findGenerator(field.key);
-        if (gen) {
-          setNestedValue(cloned, field.path, gen());
-        }
-      }
-      
-      // Fill AI fields if enabled and API key provided
-      if (useAI && apiKey && aiFields.length > 0) {
-        const aiResult = await generateWithAI(aiFields, apiKey, context);
+      // Use AI for all fields if API key is available, otherwise use local patterns as fallback
+      if (apiKey) {
+        const aiResult = await generateWithAI(fields, apiKey, context);
         for (const [path, value] of Object.entries(aiResult)) {
           setNestedValue(cloned, path, value);
         }
-      } else if (aiFields.length > 0) {
-        // Fallback for unknown fields
-        for (const field of aiFields) {
-          setNestedValue(cloned, field.path, `mock_${field.key}`);
+      } else {
+        // Fallback to local patterns
+        for (const field of fields) {
+          const gen = findGenerator(field.key);
+          if (gen) {
+            setNestedValue(cloned, field.path, gen());
+          } else {
+            setNestedValue(cloned, field.path, `mock_${field.key}`);
+          }
         }
       }
       
@@ -384,7 +325,7 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  }, [inputJson, apiKey, context, useAI]);
+  }, [inputJson, apiKey, context]);
 
   const handleGenerate = useCallback(async () => {
     setLoading(true);
@@ -467,9 +408,10 @@ export default function App() {
             </a>
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            💡 Without API key, the tool uses 200+ built-in patterns for common fields
+            💡 API key enables AI-powered generation. Without it, fill mode uses built-in patterns as fallback.
           </p>
         </div>
+
 
         {/* Mode Toggle */}
         <div className="flex gap-2 mb-6">
@@ -501,20 +443,9 @@ export default function App() {
           <div className="bg-gray-900/50 rounded-xl border border-gray-800 overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
               <h2 className="font-semibold text-gray-200">
-                {mode === 'fill' ? 'Input JSON' : 'Schema / Interface'}
+                {mode === 'fill' ? 'Input JSON (with nulls/empty values)' : 'Schema / Interface'}
               </h2>
-              {mode === 'fill' && (
-                <select
-                  onChange={(e) => setInputJson(JSON.stringify(sampleObjects[e.target.value as keyof typeof sampleObjects], null, 2))}
-                  className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-gray-300"
-                >
-                  <option value="user">User</option>
-                  <option value="product">Product</option>
-                  <option value="order">Order</option>
-                  <option value="address">Address</option>
-                </select>
-              )}
-              {mode === 'generate' && (
+              {/* {mode === 'generate' && (
                 <select
                   onChange={(e) => setSchema(sampleSchemas[e.target.value as keyof typeof sampleSchemas])}
                   className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-gray-300"
@@ -523,7 +454,7 @@ export default function App() {
                   <option value="product">Product</option>
                   <option value="employee">Employee</option>
                 </select>
-              )}
+              )} */}
             </div>
             <div className="p-4">
               <textarea
@@ -560,20 +491,6 @@ export default function App() {
                 />
               </div>
 
-              {mode === 'fill' && (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="useAI"
-                    checked={useAI}
-                    onChange={(e) => setUseAI(e.target.checked)}
-                    className="rounded bg-gray-800 border-gray-700"
-                  />
-                  <label htmlFor="useAI" className="text-sm text-gray-400">
-                    Use AI for unknown fields
-                  </label>
-                </div>
-              )}
 
               <button
                 onClick={mode === 'fill' ? handleFill : handleGenerate}
@@ -647,7 +564,7 @@ export default function App() {
               <div className="text-3xl mb-4">💰</div>
               <h3 className="font-semibold text-lg mb-2">100% Free</h3>
               <p className="text-gray-400 text-sm">
-                Uses Gemini's generous free tier (1500 requests/day). Built-in patterns work without any API key.
+                Uses Gemini's generous free tier (1500 requests/day). Fully AI-powered generation.
               </p>
             </div>
             <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-6">

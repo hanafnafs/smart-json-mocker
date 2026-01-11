@@ -15,21 +15,18 @@ import type {
   AxiosInterceptor,
   FetchWrapper,
 } from '../types';
-import { GeminiProvider, LocalProvider } from '../providers';
+import { GeminiProvider } from '../providers';
 import { CacheManager } from './cache';
-import { findPattern } from '../patterns';
 import {
   deepClone,
   extractEmptyFields,
   setNestedValue,
-  isNullish,
   retry,
 } from '../utils';
 
 export class SmartMocker {
   private config: SmartMockerConfig;
   private geminiProvider?: GeminiProvider;
-  private localProvider: LocalProvider;
   private cacheManager: CacheManager;
   private overrides: FieldOverrides = {};
   private debug: boolean;
@@ -39,9 +36,6 @@ export class SmartMocker {
     this.debug = config.debug ?? false;
     this.overrides = config.overrides ?? {};
 
-    // Initialize local provider (always available)
-    this.localProvider = new LocalProvider();
-
     // Initialize AI provider if configured
     if (config.ai.provider === 'gemini' && config.ai.apiKey) {
       this.geminiProvider = new GeminiProvider({
@@ -49,6 +43,8 @@ export class SmartMocker {
         model: config.ai.model,
         timeout: config.ai.timeout,
       });
+    } else {
+      throw new Error('AI provider configuration is required. Please provide a valid Gemini API key.');
     }
 
     // Initialize cache
@@ -83,49 +79,12 @@ export class SmartMocker {
 
     this.log(`Found ${fields.length} fields to fill:`, fields.map(f => f.path));
 
-    // Separate fields into local-resolvable and AI-required
-    const localFields: FieldInfo[] = [];
-    const aiFields: FieldInfo[] = [];
-
-    for (const field of fields) {
-      // Check for user overrides
-      if (mergedOverrides[field.key] !== undefined) {
-        localFields.push(field);
-        continue;
-      }
-
-      // Check if we have a local pattern
-      const pattern = findPattern(field.key, field.path);
-      if (pattern) {
-        localFields.push(field);
-      } else {
-        aiFields.push(field);
-      }
-    }
-
-    this.log(`Local fields: ${localFields.length}, AI fields: ${aiFields.length}`);
-
-    // Generate values for local fields
-    const localResult = await this.localProvider.generateForFields(
-      localFields,
-      options.context,
-      mergedOverrides
-    );
-
-    if (localResult.success && localResult.data) {
-      for (const [path, value] of Object.entries(localResult.data)) {
+    // Generate values using AI
+    const aiResult = await this.generateWithAI(fields, options.context, mergedOverrides);
+    
+    if (aiResult.success && aiResult.data) {
+      for (const [path, value] of Object.entries(aiResult.data)) {
         setNestedValue(cloned as Record<string, unknown>, path, value);
-      }
-    }
-
-    // Generate values for AI fields
-    if (aiFields.length > 0) {
-      const aiResult = await this.generateWithAI(aiFields, options.context, mergedOverrides);
-      
-      if (aiResult.success && aiResult.data) {
-        for (const [path, value] of Object.entries(aiResult.data)) {
-          setNestedValue(cloned as Record<string, unknown>, path, value);
-        }
       }
     }
 
@@ -141,20 +100,15 @@ export class SmartMocker {
   ): Promise<T> {
     const mergedOverrides = { ...this.overrides, ...options.overrides };
 
-    // Try AI first if available
-    if (this.geminiProvider) {
-      const result = await retry(
-        () => this.geminiProvider!.generateFromSchema(schema, 1, options.context),
-        this.config.ai.maxRetries ?? 3
-      );
-
-      if (result.success && result.data) {
-        return this.applyOverrides(result.data, mergedOverrides) as T;
-      }
+    if (!this.geminiProvider) {
+      throw new Error('AI provider not configured. Please provide a valid Gemini API key.');
     }
 
-    // Fallback to local generation
-    const result = await this.localProvider.generateFromSchema(schema, 1, options.context);
+    const result = await retry(
+      () => this.geminiProvider!.generateFromSchema(schema, 1, options.context),
+      this.config.ai.maxRetries ?? 3
+    );
+
     if (result.success && result.data) {
       return this.applyOverrides(result.data, mergedOverrides) as T;
     }
@@ -172,21 +126,15 @@ export class SmartMocker {
   ): Promise<T[]> {
     const mergedOverrides = { ...this.overrides, ...options.overrides };
 
-    // Try AI first if available
-    if (this.geminiProvider) {
-      const result = await retry(
-        () => this.geminiProvider!.generateFromSchema(schema, count, options.context),
-        this.config.ai.maxRetries ?? 3
-      );
-
-      if (result.success && result.data) {
-        const data = Array.isArray(result.data) ? result.data : [result.data];
-        return data.map(item => this.applyOverrides(item, mergedOverrides)) as T[];
-      }
+    if (!this.geminiProvider) {
+      throw new Error('AI provider not configured. Please provide a valid Gemini API key.');
     }
 
-    // Fallback to local generation
-    const result = await this.localProvider.generateFromSchema(schema, count, options.context);
+    const result = await retry(
+      () => this.geminiProvider!.generateFromSchema(schema, count, options.context),
+      this.config.ai.maxRetries ?? 3
+    );
+
     if (result.success && result.data) {
       const data = Array.isArray(result.data) ? result.data : [result.data];
       return data.map(item => this.applyOverrides(item, mergedOverrides)) as T[];
@@ -226,7 +174,7 @@ export class SmartMocker {
   /**
    * Create an Axios interceptor
    */
-  createAxiosInterceptor(config: InterceptorConfig = { enabled: true }): AxiosInterceptor {
+  createAxiosInterceptor(_config: InterceptorConfig = { enabled: true }): AxiosInterceptor {
     // This will be implemented in the interceptors module
     // For now, return a placeholder
     return {
@@ -307,27 +255,24 @@ export class SmartMocker {
       return { success: true, data: cached as Record<string, unknown> };
     }
 
-    // Try Gemini if available
-    if (this.geminiProvider) {
-      this.log('Generating with Gemini AI');
-      
-      const result = await retry(
-        () => this.geminiProvider!.generateForFields(fields, context, overrides),
-        this.config.ai.maxRetries ?? 3
-      );
-
-      if (result.success && result.data) {
-        // Cache the result
-        this.cacheManager.set(cacheKey, result.data);
-        return result;
-      }
-
-      this.log('Gemini failed, falling back to local');
+    if (!this.geminiProvider) {
+      throw new Error('AI provider not configured. Please provide a valid Gemini API key.');
     }
 
-    // Fallback to local provider
-    this.log('Generating with local provider');
-    return this.localProvider.generateForFields(fields, context, overrides);
+    this.log('Generating with Gemini AI');
+    
+    const result = await retry(
+      () => this.geminiProvider!.generateForFields(fields, context, overrides),
+      this.config.ai.maxRetries ?? 3
+    );
+
+    if (result.success && result.data) {
+      // Cache the result
+      this.cacheManager.set(cacheKey, result.data);
+      return result;
+    }
+
+    throw new Error('Failed to generate data with AI provider');
   }
 
   /**
