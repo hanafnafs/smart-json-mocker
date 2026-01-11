@@ -119,8 +119,8 @@ const mocker = createSmartMocker({
   },
   overrides: {
     // Global overrides
-    currency: 'SAR',
-    country: 'Saudi Arabia',
+    currency: 'EGP',
+    country: 'Egypt',
   },
   debug: false,
 });
@@ -177,8 +177,8 @@ const product = await generate({
 const products = await generateMany(productSchema, 10);
 
 // With context for better AI understanding
-const saudiProducts = await generateMany(productSchema, 5, {
-  context: 'Saudi Arabian marketplace products with prices in SAR',
+const egyptProducts = await generateMany(productSchema, 5, {
+  context: 'Egyptian marketplace products with prices in SAR',
 });
 ```
 
@@ -237,7 +237,7 @@ const testUsers = await generateFromInterface<User>(
   {
     overrides: {
       isActive: true, // Force all users to be active
-      'address.country': 'Saudi Arabia', // Force specific country
+      'address.country': 'Egypt', // Force specific country
     }
   }
 );
@@ -252,8 +252,8 @@ const mocker = createSmartMocker({
   ai: { provider: 'gemini', apiKey: 'your-key' },
   overrides: {
     // Static values
-    currency: 'SAR',
-    country: 'Saudi Arabia',
+    currency: 'EGP',
+    country: 'Egypt',
     
     // Dynamic generators
     orderId: () => `ORD-${Date.now()}`,

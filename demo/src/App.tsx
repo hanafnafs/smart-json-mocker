@@ -19,7 +19,7 @@ const firstNames = ['Muhammad', 'Ahmed', 'Sara', 'Fatima', 'Omar', 'Layla', 'Jam
 const lastNames = ['Al-Hassan', 'Khan', 'Ali', 'Smith', 'Garcia', 'Lee', 'Kim', 'Martinez'];
 const domains = ['gmail.com', 'outlook.com', 'company.com', 'example.org'];
 const cities = ['Riyadh', 'Dubai', 'London', 'New York', 'Tokyo', 'Paris'];
-const countries = ['Saudi Arabia', 'UAE', 'USA', 'UK', 'Japan', 'France'];
+const countries = ['Egypt', 'UAE', 'USA', 'UK', 'Japan', 'France'];
 const statuses = ['active', 'pending', 'completed', 'processing'];
 
 const randomFrom = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
@@ -486,7 +486,7 @@ export default function App() {
                   type="text"
                   value={context}
                   onChange={(e) => setContext(e.target.value)}
-                  placeholder="Add context (e.g., 'Saudi e-commerce products')"
+                  placeholder="Add context (e.g., 'Egyptian e-commerce products')"
                   className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white placeholder-gray-500"
                 />
               </div>
